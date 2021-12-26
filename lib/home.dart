@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:product_crud/location.dart';
 import 'package:product_crud/login.dart';
 
 class HomePage extends StatefulWidget {
@@ -111,66 +113,83 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Products'),
-        actions: [
-          IconButton(
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut().then((_) =>
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (context) => Login())));
-              },
-              icon: Icon(Icons.logout))
-        ],
-      ),
-      // Using StreamBuilder to display all products from Firestore in real-time
-      body: StreamBuilder(
-        stream: _productss.snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-          if (streamSnapshot.hasData) {
-            return ListView.builder(
-              itemCount: streamSnapshot.data!.docs.length,
-              itemBuilder: (context, index) {
-                final DocumentSnapshot documentSnapshot =
-                    streamSnapshot.data!.docs[index];
-                return Card(
-                  margin: EdgeInsets.all(10),
-                  child: ListTile(
-                    title: Text(documentSnapshot['name']),
-                    subtitle: Text(documentSnapshot['price'].toString()),
-                    trailing: SizedBox(
-                      width: 100,
-                      child: Row(
-                        children: [
-                          // Press this button to edit a single product
-                          IconButton(
-                              icon: Icon(Icons.edit),
-                              onPressed: () =>
-                                  _createOrUpdate(documentSnapshot)),
-                          // This icon button is used to delete a single product
-                          IconButton(
-                              icon: Icon(Icons.delete),
-                              onPressed: () =>
-                                  _deleteProduct(documentSnapshot.id)),
-                        ],
+        appBar: AppBar(
+          title: Text('Products'),
+          actions: [
+            IconButton(
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut().then((_) =>
+                      Navigator.pushReplacement(context,
+                          MaterialPageRoute(builder: (context) => Login())));
+                },
+                icon: Icon(Icons.logout))
+          ],
+        ),
+        // Using StreamBuilder to display all products from Firestore in real-time
+        body: StreamBuilder(
+          stream: _productss.snapshots(),
+          builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+            if (streamSnapshot.hasData) {
+              return ListView.builder(
+                itemCount: streamSnapshot.data!.docs.length,
+                itemBuilder: (context, index) {
+                  final DocumentSnapshot documentSnapshot =
+                      streamSnapshot.data!.docs[index];
+                  return Card(
+                    margin: EdgeInsets.all(10),
+                    child: ListTile(
+                      title: Text(documentSnapshot['name']),
+                      subtitle: Text(documentSnapshot['price'].toString()),
+                      trailing: SizedBox(
+                        width: 100,
+                        child: Row(
+                          children: [
+                            // Press this button to edit a single product
+                            IconButton(
+                                icon: Icon(Icons.edit),
+                                onPressed: () =>
+                                    _createOrUpdate(documentSnapshot)),
+                            // This icon button is used to delete a single product
+                            IconButton(
+                                icon: Icon(Icons.delete),
+                                onPressed: () =>
+                                    _deleteProduct(documentSnapshot.id)),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
-            );
-          }
+                  );
+                },
+              );
+            }
 
-          return Center(
-            child: CircularProgressIndicator(),
-          );
-        },
-      ),
-      // Add new product
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _createOrUpdate(),
-        child: Icon(Icons.add),
-      ),
-    );
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          },
+        ),
+        floatingActionButton:
+            Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+          new FloatingActionButton(
+            onPressed: () => _createOrUpdate(),
+            child: Icon(Icons.add),
+          ),
+          SizedBox(
+            width: 20,
+          ),
+          new FloatingActionButton(
+            onPressed: () => Navigator.push(context,
+                MaterialPageRoute(builder: (context) => CurrentLocation())),
+            child: Icon(Icons.location_city),
+          ),
+        ])
+
+        // // Add new product
+        // floatingActionButton: FloatingActionButton(
+        //   onPressed: () => _createOrUpdate(),
+        //   child: Icon(Icons.add),
+        // ),
+
+        );
   }
 }
