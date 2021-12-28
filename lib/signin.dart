@@ -96,7 +96,43 @@ class _SignInState extends State<SignIn> {
               ),
               ElevatedButton(
                   onPressed: () {
-                    register();
+                    if (email.text == "" ||
+                        password.text == "" ||
+                        confirm.text == "") {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('All fields are mandatory'),
+                          duration: Duration(seconds: 5),
+                        ),
+                      );
+                    } else if (password.text.length < 8) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content:
+                              Text('Password should have atleast 8 characters'),
+                          duration: Duration(seconds: 5),
+                        ),
+                      );
+                    } else if (!password.text
+                        .contains(new RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              'Password should have atleast 1 special character'),
+                          duration: Duration(seconds: 5),
+                        ),
+                      );
+                    } else if (password.text != confirm.text) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              "password and confirm password doesn't match"),
+                          duration: Duration(seconds: 5),
+                        ),
+                      );
+                    } else {
+                      register();
+                    }
                   },
                   child: Text("Signin")),
               TextButton(

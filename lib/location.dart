@@ -84,6 +84,21 @@ class _CurrentLocationState extends State<CurrentLocation> {
                   onPressed: () async {
                     Position position = await _getGeoCostPosition();
                     getCurrentAddress(position);
+                    showDialog<String>(
+                      context: context,
+                      builder: (BuildContext context) => AlertDialog(
+                        title: const Text('Your current location'),
+                        content: Text('$fromaddress'),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context, 'Cancel');
+                            },
+                            child: const Text('Back'),
+                          ),
+                        ],
+                      ),
+                    );
                   },
                   child: Text("Location")),
             ),
@@ -91,7 +106,8 @@ class _CurrentLocationState extends State<CurrentLocation> {
           SizedBox(
             height: 20,
           ),
-          Text('$fromaddress')
+
+          //Text('$fromaddress')
         ],
       ),
     );
