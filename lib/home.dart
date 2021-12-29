@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -5,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:product_crud/location.dart';
 import 'package:product_crud/login.dart';
+import 'package:product_crud/singleProduct.dart';
+import 'package:product_crud/webview.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -14,6 +18,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _imageController = TextEditingController();
 
   CollectionReference _productss =
       FirebaseFirestore.instance.collection('products');
@@ -27,6 +32,7 @@ class _HomePageState extends State<HomePage> {
       action = 'update';
       _nameController.text = documentSnapshot['name'];
       _priceController.text = documentSnapshot['price'].toString();
+      _imageController.text = documentSnapshot['imageUrl'];
     }
 
     await showModalBottomSheet(
@@ -58,6 +64,13 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.all(15.0),
+                  child: TextField(
+                    controller: _imageController,
+                    decoration: InputDecoration(labelText: 'ImageUrl'),
+                  ),
+                ),
                 SizedBox(
                   height: 20,
                 ),
@@ -70,23 +83,32 @@ class _HomePageState extends State<HomePage> {
                         final String? name = _nameController.text;
                         final double? price =
                             double.tryParse(_priceController.text);
+                        final String? image = _imageController.text;
+                        final String? id = generateId();
                         if (name != null && price != null) {
                           if (action == 'create') {
                             // Persist a new product to Firestore
-                            await _productss
-                                .add({"name": name, "price": price});
+                            await _productss.add({
+                              "name": name,
+                              "price": price,
+                              "imageUrl": image,
+                              "pid": id.toString()
+                            });
                           }
 
                           if (action == 'update') {
                             // Update the product
-                            await _productss
-                                .doc(documentSnapshot!.id)
-                                .update({"name": name, "price": price});
+                            await _productss.doc(documentSnapshot!.id).update({
+                              "name": name,
+                              "price": price,
+                              "imageUrl": image
+                            });
                           }
 
                           // Clear the text fields
                           _nameController.text = '';
                           _priceController.text = '';
+                          _imageController.text = '';
 
                           // Hide the bottom sheet
                           Navigator.of(context).pop();
@@ -110,6 +132,16 @@ class _HomePageState extends State<HomePage> {
         SnackBar(content: Text('You have successfully deleted a product')));
   }
 
+  String generateId() {
+    var rnd = new Random();
+    var next = rnd.nextDouble() * 1000000;
+    while (next < 100000) {
+      next *= 10;
+    }
+
+    return ('ID' + next.toInt().toString());
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -117,13 +149,27 @@ class _HomePageState extends State<HomePage> {
           automaticallyImplyLeading: false,
           title: Text('Products'),
           actions: [
-            IconButton(
-                onPressed: () async {
-                  await FirebaseAuth.instance.signOut().then((_) =>
-                      Navigator.pushReplacement(context,
-                          MaterialPageRoute(builder: (context) => Login())));
-                },
-                icon: Icon(Icons.logout))
+            Row(
+              children: [
+                IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => WebViewMobile()));
+                    },
+                    icon: Icon(Icons.public)),
+                IconButton(
+                    onPressed: () async {
+                      await FirebaseAuth.instance.signOut().then((_) =>
+                          Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(builder: (context) => Login()),
+                              (route) => false));
+                    },
+                    icon: Icon(Icons.logout)),
+              ],
+            )
           ],
         ),
         // Using StreamBuilder to display all products from Firestore in real-time
@@ -136,26 +182,38 @@ class _HomePageState extends State<HomePage> {
                 itemBuilder: (context, index) {
                   final DocumentSnapshot documentSnapshot =
                       streamSnapshot.data!.docs[index];
-                  return Card(
-                    margin: EdgeInsets.all(10),
-                    child: ListTile(
-                      title: Text(documentSnapshot['name']),
-                      subtitle: Text(documentSnapshot['price'].toString()),
-                      trailing: SizedBox(
-                        width: 100,
-                        child: Row(
-                          children: [
-                            // Press this button to edit a single product
-                            IconButton(
-                                icon: Icon(Icons.edit),
-                                onPressed: () =>
-                                    _createOrUpdate(documentSnapshot)),
-                            // This icon button is used to delete a single product
-                            IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () =>
-                                    _deleteProduct(documentSnapshot.id)),
-                          ],
+                  return InkWell(
+                    onTap: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => SingleProduct(
+                                  data: documentSnapshot['pid'])));
+                    },
+                    child: Card(
+                      margin: EdgeInsets.all(10),
+                      child: ListTile(
+                        leading: Image.network(documentSnapshot['imageUrl']),
+                        title: Text(documentSnapshot['pid'] +
+                            "\n" +
+                            documentSnapshot['name']),
+                        subtitle: Text(documentSnapshot['price'].toString()),
+                        trailing: SizedBox(
+                          width: 100,
+                          child: Row(
+                            children: [
+                              // Press this button to edit a single product
+                              IconButton(
+                                  icon: Icon(Icons.edit),
+                                  onPressed: () =>
+                                      _createOrUpdate(documentSnapshot)),
+                              // This icon button is used to delete a single product
+                              IconButton(
+                                  icon: Icon(Icons.delete),
+                                  onPressed: () =>
+                                      _deleteProduct(documentSnapshot.id)),
+                            ],
+                          ),
                         ),
                       ),
                     ),

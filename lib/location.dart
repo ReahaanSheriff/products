@@ -11,6 +11,7 @@ class CurrentLocation extends StatefulWidget {
 
 class _CurrentLocationState extends State<CurrentLocation> {
   var fromaddress;
+  var add;
   Future<Position> _getGeoCostPosition() async {
     bool serviceEnabled;
     LocationPermission permission;
@@ -50,7 +51,7 @@ class _CurrentLocationState extends State<CurrentLocation> {
         desiredAccuracy: LocationAccuracy.high);
   }
 
-  Future<void> getCurrentAddress(Position position) async {
+  getCurrentAddress(Position position) async {
     try {
       List<Placemark> placemarks =
           await placemarkFromCoordinates(position.latitude, position.longitude);
@@ -59,8 +60,11 @@ class _CurrentLocationState extends State<CurrentLocation> {
       fromaddress =
           '${place.thoroughfare}, \n ${place.subLocality},\n ${place.locality},${place.administrativeArea}, \n ${place.country}, ${place.postalCode}';
 
-      setState(() {});
-      print(fromaddress);
+      setState(() {
+        add = fromaddress;
+      });
+      //print(fromaddress);
+      return fromaddress;
       // print(place);
 
       // print(position.latitude);
@@ -83,13 +87,21 @@ class _CurrentLocationState extends State<CurrentLocation> {
               child: ElevatedButton(
                   onPressed: () async {
                     Position position = await _getGeoCostPosition();
-                    getCurrentAddress(position);
+                    var a = await getCurrentAddress(position);
+
                     showDialog<String>(
                       context: context,
                       builder: (BuildContext context) => AlertDialog(
                         title: const Text('Your current location'),
-                        content: Text('$fromaddress'),
+                        content: Text(a.toString()),
                         actions: <Widget>[
+                          // TextButton(
+                          //   onPressed: () async {
+                          //     Position position = await _getGeoCostPosition();
+                          //     getCurrentAddress(position);
+                          //   },
+                          //   child: const Text('Refresh'),
+                          // ),
                           TextButton(
                             onPressed: () {
                               Navigator.pop(context, 'Cancel');
